@@ -20,6 +20,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     position: relative;
+    transition: background-color 0.3s ease;
 }
 
 .game-header {
@@ -138,6 +139,34 @@ button:hover {
     40%, 60% {
         transform: translate3d(4px, 0, 0);
     }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes damage {
+    0% { background-color: rgba(255, 0, 0, 0.2); }
+    100% { background-color: rgba(42, 42, 42, 1); }
+}
+
+@keyframes heal {
+    0% { background-color: rgba(0, 255, 0, 0.2); }
+    100% { background-color: rgba(42, 42, 42, 1); }
+}
+
+.damage {
+    animation: damage 0.3s ease-out;
+}
+
+.heal {
+    animation: heal 0.3s ease-out;
+}
+
+.pulse {
+    animation: pulse 0.3s ease-in-out;
 }
 
 @media (max-width: 768px) {
