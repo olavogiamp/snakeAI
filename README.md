@@ -2,6 +2,10 @@
 
 A modern Snake game built with vanilla JavaScript and HTML5 Canvas, featuring special effects and power-ups.
 
+![Preview](preview1.png)
+
+![Preview](preview2.png)
+
 ## Features
 
 - 🎮 Modern visual effects and animations
