@@ -1,0 +1,153 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #1a1a1a;
+    font-family: 'Arial', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+}
+
+.game-container {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.game-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+.score-container {
+    font-size: 1.2em;
+    color: #fff;
+}
+
+#gameCanvas {
+    background: #000;
+    border-radius: 5px;
+}
+
+.game-controls {
+    margin-top: 20px;
+    text-align: center;
+}
+
+button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+.mobile-controls {
+    display: none;
+    margin-top: 20px;
+}
+
+.horizontal-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 10px 0;
+}
+
+.game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #ff4444;
+    animation: fadeIn 0.5s ease-in;
+    display: none;
+}
+
+.game-over h2 {
+    color: #ff4444;
+    font-size: 2em;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+}
+
+.game-over p {
+    color: #fff;
+    font-size: 1.2em;
+    margin-bottom: 20px;
+}
+
+.game-over button {
+    background: #ff4444;
+    margin-top: 10px;
+    padding: 15px 30px;
+}
+
+.game-over button:hover {
+    background: #ff2222;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes shake {
+    10%, 90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+    
+    20%, 80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%, 50%, 70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%, 60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-controls {
+        display: block;
+    }
+    
+    .mobile-controls button {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+}
