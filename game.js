@@ -31,6 +31,61 @@ class SnakeGame {
         this.canvas.height = size;
         this.tileSize = size / 20;
 
+        // Configurações dos estágios de evolução
+        this.evolutionStages = {
+            BASIC: {
+                minScore: 0,
+                name: 'Cobra Básica',
+                colors: ['#66bb6a', '#43a047'],
+                glowColor: 'rgba(102, 187, 106, 0.2)',
+                scalePattern: true
+            },
+            SKILLED: {
+                minScore: 100,
+                name: 'Cobra Habilidosa',
+                colors: ['#42a5f5', '#1976d2'],
+                glowColor: 'rgba(66, 165, 245, 0.3)',
+                scalePattern: true,
+                trailEffect: true
+            },
+            EXPERT: {
+                minScore: 250,
+                name: 'Cobra Experiente',
+                colors: ['#ab47bc', '#7b1fa2'],
+                glowColor: 'rgba(171, 71, 188, 0.4)',
+                scalePattern: true,
+                trailEffect: true,
+                energyAura: true
+            },
+            MASTER: {
+                minScore: 500,
+                name: 'Cobra Mestre',
+                colors: ['#ffd700', '#ffa500'],
+                glowColor: 'rgba(255, 215, 0, 0.5)',
+                scalePattern: true,
+                trailEffect: true,
+                energyAura: true,
+                goldenEffect: true
+            },
+            LEGENDARY: {
+                minScore: 1000,
+                name: 'Cobra Lendária',
+                colors: ['#ff4081', '#c51162'],
+                glowColor: 'rgba(255, 64, 129, 0.6)',
+                scalePattern: true,
+                trailEffect: true,
+                energyAura: true,
+                goldenEffect: true,
+                rainbowEffect: true
+            }
+        };
+
+        // Variáveis para efeitos de evolução
+        this.currentStage = this.evolutionStages.BASIC;
+        this.evolutionParticles = [];
+        this.trailPositions = [];
+        this.rainbowHue = 0;
+
         // Inicializar estado do jogo
         this.initializeGameState();
         
@@ -86,6 +141,12 @@ class SnakeGame {
         this.deathPosition = null;
         this.fadeOutEffect = false;
 
+        // Resetar efeitos de evolução
+        this.evolutionParticles = [];
+        this.trailPositions = [];
+        this.rainbowHue = 0;
+        this.currentStage = this.evolutionStages.BASIC;
+
         // Gerar primeira comida
         this.food = this.generateFood();
     }
@@ -100,10 +161,13 @@ class SnakeGame {
 
     generateFood() {
         let newFood;
+        const maxX = Math.floor(this.canvas.width / this.tileSize);
+        const maxY = Math.floor(this.canvas.height / this.tileSize);
+        
         do {
             newFood = {
-                x: Math.floor(Math.random() * (this.canvas.width / this.tileSize)),
-                y: Math.floor(Math.random() * (this.canvas.height / this.tileSize)),
+                x: Math.floor(Math.random() * maxX),
+                y: Math.floor(Math.random() * maxY),
                 type: this.decideFoodType(),
                 createdAt: Date.now(),
                 scale: 1
@@ -125,11 +189,10 @@ class SnakeGame {
             if (this.bombTimer) clearTimeout(this.bombTimer);
             this.bombTimer = setTimeout(() => {
                 if (this.food && this.food.type === this.foodTypes.BOMB) {
-                    // Efeito de desaparecimento da bomba
                     this.createBombDespawnEffect(this.food.x * this.tileSize, this.food.y * this.tileSize);
                     this.food = this.generateFood();
                 }
-            }, 5000); // Bomba desaparece após 5 segundos
+            }, 5000);
         } else if (newFood.type === this.foodTypes.HEART) {
             if (this.heartTimer) clearTimeout(this.heartTimer);
             this.heartTimer = setTimeout(() => {
@@ -137,7 +200,7 @@ class SnakeGame {
                     this.createHeartDespawnEffect(this.food.x * this.tileSize, this.food.y * this.tileSize);
                     this.food = this.generateFood();
                 }
-            }, 3000); // Coração desaparece mais rápido
+            }, 3000);
             
             // Gerar uma comida extra quando aparecer um coração
             this.generateExtraFood();
@@ -251,6 +314,15 @@ class SnakeGame {
 
         // Handle food collision
         this.handleFoodCollision(head);
+
+        // Verificar evolução
+        const newStage = this.getCurrentStage();
+        if (newStage !== this.currentStage) {
+            this.onEvolution(newStage);
+        }
+
+        // Atualizar efeitos de evolução
+        this.updateEvolutionEffects();
 
         // Update effects
         this.updateEffects();
@@ -807,15 +879,66 @@ class SnakeGame {
 
         // Desenhar interface de vidas
         this.drawLives();
+
+        // Desenhar rastro se ativo
+        if (this.currentStage.trailEffect && this.trailPositions.length > 0) {
+            this.trailPositions.forEach((pos, index) => {
+                const alpha = 1 - (index / this.trailPositions.length);
+                this.ctx.fillStyle = `${this.currentStage.glowColor.slice(0, -4)}, ${alpha})`;
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    pos.x * this.tileSize + this.tileSize/2,
+                    pos.y * this.tileSize + this.tileSize/2,
+                    this.tileSize/3,
+                    0,
+                    Math.PI * 2
+                );
+                this.ctx.fill();
+            });
+        }
+
+        // Desenhar partículas de evolução
+        this.evolutionParticles.forEach(particle => {
+            const alpha = particle.life;
+            this.ctx.fillStyle = `${particle.color}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, this.tileSize/4 * particle.life, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
     }
 
     drawSnakeHead(x, y, size, direction) {
-        const gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
-        gradient.addColorStop(0, '#7cb342');
-        gradient.addColorStop(1, '#558b2f');
-        this.ctx.fillStyle = gradient;
+        const stage = this.currentStage;
+        
+        // Desenhar aura na cabeça
+        if (stage.energyAura) {
+            const auraSize = size * 1.4;
+            const auraGradient = this.ctx.createRadialGradient(
+                x + size/2, y + size/2, size/2,
+                x + size/2, y + size/2, auraSize
+            );
+            auraGradient.addColorStop(0, stage.glowColor);
+            auraGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            this.ctx.fillStyle = auraGradient;
+            this.ctx.beginPath();
+            this.ctx.arc(x + size/2, y + size/2, auraSize, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
 
-        // Desenhar cabeça oval
+        // Gradiente base da cabeça
+        let gradient;
+        if (stage.rainbowEffect) {
+            gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
+            gradient.addColorStop(0, `hsl(${this.rainbowHue}, 100%, 60%)`);
+            gradient.addColorStop(1, `hsl(${this.rainbowHue + 30}, 100%, 50%)`);
+        } else {
+            gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
+            gradient.addColorStop(0, stage.colors[0]);
+            gradient.addColorStop(1, stage.colors[1]);
+        }
+
+        // Desenhar cabeça com aparência evoluída
+        this.ctx.fillStyle = gradient;
         this.ctx.beginPath();
         this.ctx.ellipse(
             x + size/2,
@@ -828,11 +951,11 @@ class SnakeGame {
         );
         this.ctx.fill();
 
-        // Olhos com brilho
+        // Olhos com efeito baseado no estágio
         const eyeSize = size/6;
         const eyeOffset = size/4;
-        
         let eyeX1, eyeY1, eyeX2, eyeY2;
+        
         if (direction.x !== 0) {
             eyeX1 = eyeX2 = x + size/2 + (direction.x * eyeOffset);
             eyeY1 = y + size/3;
@@ -843,8 +966,16 @@ class SnakeGame {
             eyeY1 = eyeY2 = y + size/2 + (direction.y * eyeOffset);
         }
 
-        // Base dos olhos
-        this.ctx.fillStyle = '#000';
+        // Cor dos olhos baseada no estágio
+        let eyeColor = '#000';
+        if (stage === this.evolutionStages.MASTER) {
+            eyeColor = '#ffd700';
+        } else if (stage === this.evolutionStages.LEGENDARY) {
+            eyeColor = `hsl(${this.rainbowHue}, 100%, 50%)`;
+        }
+
+        // Desenhar olhos
+        this.ctx.fillStyle = eyeColor;
         this.ctx.beginPath();
         this.ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
         this.ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
@@ -859,74 +990,74 @@ class SnakeGame {
     }
 
     drawSnakeBody(x, y, size, index, effectColor, effectIntensity = 0) {
-        // Gradiente para o corpo com transição suave entre cores
-        const gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
+        const stage = this.currentStage;
         
-        if (effectColor && effectIntensity > 0) {
-            const baseColor1 = '#66bb6a';
-            const baseColor2 = '#43a047';
-            
-            const interpolatedColor1 = this.interpolateColors(baseColor1, effectColor, effectIntensity);
-            const interpolatedColor2 = this.interpolateColors(baseColor2, this.adjustColor(effectColor, -20), effectIntensity);
-            
-            gradient.addColorStop(0, interpolatedColor1);
-            gradient.addColorStop(1, interpolatedColor2);
+        // Criar gradiente base
+        let gradient;
+        if (stage.rainbowEffect) {
+            const hue = (this.rainbowHue + index * 10) % 360;
+            gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
+            gradient.addColorStop(0, `hsl(${hue}, 100%, 60%)`);
+            gradient.addColorStop(1, `hsl(${hue + 30}, 100%, 50%)`);
         } else {
-            gradient.addColorStop(0, '#66bb6a');
-            gradient.addColorStop(1, '#43a047');
+            gradient = this.ctx.createLinearGradient(x, y, x + size, y + size);
+            gradient.addColorStop(0, stage.colors[0]);
+            gradient.addColorStop(1, stage.colors[1]);
         }
         
-        this.ctx.fillStyle = gradient;
+        // Desenhar aura de energia
+        if (stage.energyAura) {
+            const auraSize = size * 1.2;
+            const auraGradient = this.ctx.createRadialGradient(
+                x + size/2, y + size/2, size/2,
+                x + size/2, y + size/2, auraSize
+            );
+            auraGradient.addColorStop(0, stage.glowColor);
+            auraGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            this.ctx.fillStyle = auraGradient;
+            this.ctx.beginPath();
+            this.ctx.arc(x + size/2, y + size/2, auraSize, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
 
-        // Corpo suavemente arredondado com ondulação
-        const waveIntensity = effectIntensity > 0 ? 3 : 2;
-        const offset = Math.sin(Date.now() / 200 + index) * waveIntensity;
-        
+        // Efeito dourado
+        if (stage.goldenEffect) {
+            const time = Date.now() / 1000;
+            const shimmerIntensity = (Math.sin(time * 2 + index * 0.1) + 1) / 2;
+            this.ctx.fillStyle = `rgba(255, 215, 0, ${shimmerIntensity * 0.3})`;
+            this.ctx.beginPath();
+            this.ctx.roundRect(x, y, size, size, 4);
+            this.ctx.fill();
+        }
+
+        // Desenhar corpo base
+        this.ctx.fillStyle = gradient;
         this.ctx.beginPath();
-        this.ctx.roundRect(
-            x + offset/2,
-            y,
-            size - offset,
-            size,
-            4
-        );
+        this.ctx.roundRect(x, y, size, size, 4);
         this.ctx.fill();
 
-        // Padrão de escamas
-        this.drawSnakeScales(x, y, size, index);
+        // Desenhar padrão de escamas se ativo
+        if (stage.scalePattern) {
+            this.drawSnakeScales(x, y, size, index);
+        }
     }
 
     drawSnakeScales(x, y, size, index) {
-        const scaleSize = size/3;
-        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-        this.ctx.lineWidth = 1;
+        const scaleSize = size / 3;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         
-        const offsetY = (index % 2) * scaleSize/2;
-        for (let i = -scaleSize; i < size + scaleSize; i += scaleSize) {
-            for (let j = -scaleSize; j < size + scaleSize; j += scaleSize) {
-                // Desenhar padrão de escama
-                this.ctx.beginPath();
-                this.ctx.moveTo(x + i + scaleSize/2, y + j + offsetY);
-                this.ctx.lineTo(x + i + scaleSize, y + j + scaleSize/2 + offsetY);
-                this.ctx.lineTo(x + i + scaleSize/2, y + j + scaleSize + offsetY);
-                this.ctx.lineTo(x + i, y + j + scaleSize/2 + offsetY);
-                this.ctx.closePath();
-                this.ctx.stroke();
-
-                // Brilho das escamas
-                const scaleGradient = this.ctx.createRadialGradient(
-                    x + i + scaleSize/2,
-                    y + j + scaleSize/2 + offsetY,
-                    0,
-                    x + i + scaleSize/2,
-                    y + j + scaleSize/2 + offsetY,
-                    scaleSize/2
-                );
-                scaleGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-                scaleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                this.ctx.fillStyle = scaleGradient;
-                this.ctx.fill();
-            }
+        // Padrão de escamas alternado
+        for (let i = 0; i < 3; i++) {
+            const offsetX = (index % 2) * (scaleSize / 2);
+            this.ctx.beginPath();
+            this.ctx.arc(
+                x + scaleSize * i + offsetX,
+                y + size/2,
+                scaleSize/2,
+                0,
+                Math.PI * 2
+            );
+            this.ctx.fill();
         }
     }
 
@@ -1489,6 +1620,76 @@ class SnakeGame {
             }
             
             this.drawHeart(x, y, heartSize, isFilled);
+        }
+    }
+
+    getCurrentStage() {
+        let newStage = this.evolutionStages.BASIC;
+        for (const stage of Object.values(this.evolutionStages)) {
+            if (this.score >= stage.minScore) {
+                newStage = stage;
+            }
+        }
+        return newStage;
+    }
+
+    onEvolution(newStage) {
+        this.currentStage = newStage;
+        
+        // Criar efeito de evolução
+        this.createEvolutionEffect();
+        
+        // Notificar o jogador
+        const notification = document.createElement('div');
+        notification.className = 'evolution-notification';
+        notification.textContent = `Evolução: ${newStage.name}!`;
+        document.body.appendChild(notification);
+        
+        // Remover a notificação após 3 segundos
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    createEvolutionEffect() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        
+        // Criar partículas de evolução
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 * i) / 30;
+            const speed = 5;
+            this.evolutionParticles.push({
+                x: centerX,
+                y: centerY,
+                dx: Math.cos(angle) * speed,
+                dy: Math.sin(angle) * speed,
+                life: 1,
+                color: this.currentStage.colors[0]
+            });
+        }
+    }
+
+    updateEvolutionEffects() {
+        // Atualizar partículas de evolução
+        this.evolutionParticles = this.evolutionParticles.filter(particle => {
+            particle.x += particle.dx;
+            particle.y += particle.dy;
+            particle.life -= 0.02;
+            return particle.life > 0;
+        });
+
+        // Atualizar posições do rastro
+        if (this.currentStage.trailEffect) {
+            this.trailPositions.unshift({ x: this.snake[0].x, y: this.snake[0].y });
+            if (this.trailPositions.length > 5) {
+                this.trailPositions.pop();
+            }
+        }
+
+        // Atualizar efeito rainbow
+        if (this.currentStage.rainbowEffect) {
+            this.rainbowHue = (this.rainbowHue + 1) % 360;
         }
     }
 }
