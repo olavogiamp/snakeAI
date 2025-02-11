@@ -86,6 +86,11 @@ class SnakeGame {
         this.trailPositions = [];
         this.rainbowHue = 0;
 
+        // Configurações de velocidade
+        this.baseSpeed = 200; // Velocidade inicial mais lenta (era 150)
+        this.minSpeed = 80;   // Velocidade máxima (menor número = mais rápido)
+        this.speedIncrease = 2; // Quanto menor, mais suave a progressão
+
         // Inicializar estado do jogo
         this.initializeGameState();
         
@@ -116,8 +121,8 @@ class SnakeGame {
         this.score = 0;
         this.lives = 0;
         this.maxLives = 3;
-        this.speed = 150;
-        this.normalSpeed = 150;
+        this.speed = this.baseSpeed;
+        this.normalSpeed = this.baseSpeed;
         this.currentFoodColorIndex = 0;
 
         // Timers e efeitos
@@ -464,7 +469,15 @@ class SnakeGame {
     }
 
     updateSpeed() {
-        this.speed = Math.max(50, 150 - Math.floor(this.score / 50) * 10);
+        // Nova fórmula de velocidade mais suave
+        // A velocidade diminui (fica mais rápido) conforme a pontuação aumenta
+        // Usando uma função logarítmica para fazer a progressão mais suave
+        const scoreMultiplier = Math.log10(this.score + 10) * this.speedIncrease;
+        this.speed = Math.max(
+            this.minSpeed, 
+            this.baseSpeed - (scoreMultiplier * 5)
+        );
+        this.normalSpeed = this.speed;
     }
 
     handleBombCollision() {
