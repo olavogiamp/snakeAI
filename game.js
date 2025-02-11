@@ -38,7 +38,12 @@ class SnakeGame {
                 name: 'Cobra Básica',
                 colors: ['#66bb6a', '#43a047'],
                 glowColor: 'rgba(102, 187, 106, 0.2)',
-                scalePattern: true
+                scalePattern: true,
+                faceStyle: {
+                    eyeColor: '#000000',
+                    eyeStyle: 'cute',  // olhos redondos e fofos
+                    mouthStyle: 'smile' // sorriso feliz
+                }
             },
             SKILLED: {
                 minScore: 100,
@@ -46,7 +51,12 @@ class SnakeGame {
                 colors: ['#42a5f5', '#1976d2'],
                 glowColor: 'rgba(66, 165, 245, 0.3)',
                 scalePattern: true,
-                trailEffect: true
+                trailEffect: true,
+                faceStyle: {
+                    eyeColor: '#1565C0',
+                    eyeStyle: 'determined', // olhos determinados
+                    mouthStyle: 'confident' // sorriso confiante
+                }
             },
             EXPERT: {
                 minScore: 250,
@@ -55,7 +65,12 @@ class SnakeGame {
                 glowColor: 'rgba(171, 71, 188, 0.4)',
                 scalePattern: true,
                 trailEffect: true,
-                energyAura: true
+                energyAura: true,
+                faceStyle: {
+                    eyeColor: '#4A148C',
+                    eyeStyle: 'wise', // olhos sábios
+                    mouthStyle: 'smirk' // sorriso sagaz
+                }
             },
             MASTER: {
                 minScore: 500,
@@ -65,7 +80,12 @@ class SnakeGame {
                 scalePattern: true,
                 trailEffect: true,
                 energyAura: true,
-                goldenEffect: true
+                goldenEffect: true,
+                faceStyle: {
+                    eyeColor: '#FF6F00',
+                    eyeStyle: 'master', // olhos dourados com brilho
+                    mouthStyle: 'zen' // expressão zen
+                }
             },
             LEGENDARY: {
                 minScore: 1000,
@@ -76,7 +96,12 @@ class SnakeGame {
                 trailEffect: true,
                 energyAura: true,
                 goldenEffect: true,
-                rainbowEffect: true
+                rainbowEffect: true,
+                faceStyle: {
+                    eyeColor: '#C51162',
+                    eyeStyle: 'legendary', // olhos com efeito arco-íris
+                    mouthStyle: 'epic' // sorriso épico
+                }
             }
         };
 
@@ -922,6 +947,7 @@ class SnakeGame {
 
     drawSnakeHead(x, y, size, direction) {
         const stage = this.currentStage;
+        const faceStyle = stage.faceStyle;
         
         // Desenhar aura na cabeça
         if (stage.energyAura) {
@@ -964,42 +990,175 @@ class SnakeGame {
         );
         this.ctx.fill();
 
-        // Olhos com efeito baseado no estágio
-        const eyeSize = size/6;
-        const eyeOffset = size/4;
-        let eyeX1, eyeY1, eyeX2, eyeY2;
+        // Variáveis para posicionamento dos olhos e boca
+        const eyeSize = size/5;
+        const eyeOffset = size/3;
+        let eyeX1, eyeY1, eyeX2, eyeY2, mouthX, mouthY;
         
+        // Posicionar olhos e boca baseado na direção
         if (direction.x !== 0) {
             eyeX1 = eyeX2 = x + size/2 + (direction.x * eyeOffset);
             eyeY1 = y + size/3;
             eyeY2 = y + size * 2/3;
+            mouthX = x + size/2 + (direction.x * (eyeOffset + size/6));
+            mouthY = y + size/2;
         } else {
             eyeX1 = x + size/3;
             eyeX2 = x + size * 2/3;
             eyeY1 = eyeY2 = y + size/2 + (direction.y * eyeOffset);
+            mouthX = x + size/2;
+            mouthY = y + size/2 + (direction.y * (eyeOffset + size/6));
         }
 
-        // Cor dos olhos baseada no estágio
-        let eyeColor = '#000';
-        if (stage === this.evolutionStages.MASTER) {
-            eyeColor = '#ffd700';
-        } else if (stage === this.evolutionStages.LEGENDARY) {
-            eyeColor = `hsl(${this.rainbowHue}, 100%, 50%)`;
+        // Desenhar olhos baseado no estilo
+        switch(faceStyle.eyeStyle) {
+            case 'cute':
+                // Olhos redondos e fofos com reflexo
+                this.ctx.fillStyle = faceStyle.eyeColor;
+                this.ctx.beginPath();
+                this.ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
+                this.ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Reflexo fofo
+                this.ctx.fillStyle = 'white';
+                this.ctx.beginPath();
+                this.ctx.arc(eyeX1 - eyeSize/3, eyeY1 - eyeSize/3, eyeSize/3, 0, Math.PI * 2);
+                this.ctx.arc(eyeX2 - eyeSize/3, eyeY2 - eyeSize/3, eyeSize/3, 0, Math.PI * 2);
+                this.ctx.fill();
+                break;
+
+            case 'determined':
+                // Olhos determinados (formato de amêndoa)
+                this.ctx.fillStyle = faceStyle.eyeColor;
+                for (let [ex, ey] of [[eyeX1, eyeY1], [eyeX2, eyeY2]]) {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(ex, ey, eyeSize, eyeSize/2, direction.x ? Math.PI/4 : -Math.PI/4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                break;
+
+            case 'wise':
+                // Olhos sábios (semicerrados)
+                this.ctx.fillStyle = faceStyle.eyeColor;
+                for (let [ex, ey] of [[eyeX1, eyeY1], [eyeX2, eyeY2]]) {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(ex, ey, eyeSize, eyeSize/3, 0, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                break;
+
+            case 'master':
+                // Olhos de mestre com brilho dourado
+                const gradient = this.ctx.createRadialGradient(
+                    eyeX1, eyeY1, 0,
+                    eyeX1, eyeY1, eyeSize
+                );
+                gradient.addColorStop(0, '#FFF9C4');
+                gradient.addColorStop(0.6, '#FFC107');
+                gradient.addColorStop(1, faceStyle.eyeColor);
+                
+                for (let [ex, ey] of [[eyeX1, eyeY1], [eyeX2, eyeY2]]) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(ex, ey, eyeSize, 0, Math.PI * 2);
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                }
+                break;
+
+            case 'legendary':
+                // Olhos lendários com efeito arco-íris
+                for (let [ex, ey] of [[eyeX1, eyeY1], [eyeX2, eyeY2]]) {
+                    const rainbowGradient = this.ctx.createRadialGradient(
+                        ex, ey, 0,
+                        ex, ey, eyeSize
+                    );
+                    const hue = (this.rainbowHue + (ex * 30)) % 360;
+                    rainbowGradient.addColorStop(0, `hsl(${hue}, 100%, 75%)`);
+                    rainbowGradient.addColorStop(0.5, `hsl(${hue + 30}, 100%, 50%)`);
+                    rainbowGradient.addColorStop(1, `hsl(${hue + 60}, 100%, 40%)`);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(ex, ey, eyeSize * 1.2, 0, Math.PI * 2);
+                    this.ctx.fillStyle = rainbowGradient;
+                    this.ctx.fill();
+                }
+                break;
         }
 
-        // Desenhar olhos
-        this.ctx.fillStyle = eyeColor;
-        this.ctx.beginPath();
-        this.ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
-        this.ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Desenhar boca baseado no estilo
+        switch(faceStyle.mouthStyle) {
+            case 'smile':
+                // Sorriso fofo
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(mouthX, mouthY, size/6, 0, Math.PI);
+                this.ctx.stroke();
+                break;
 
-        // Brilho nos olhos
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.beginPath();
-        this.ctx.arc(eyeX1 - eyeSize/3, eyeY1 - eyeSize/3, eyeSize/4, 0, Math.PI * 2);
-        this.ctx.arc(eyeX2 - eyeSize/3, eyeY2 - eyeSize/3, eyeSize/4, 0, Math.PI * 2);
-        this.ctx.fill();
+            case 'confident':
+                // Sorriso confiante
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(mouthX, mouthY - size/8, size/5, 0, Math.PI);
+                this.ctx.stroke();
+                
+                // Sobrancelhas confiantes
+                const browOffset = size/4;
+                this.ctx.beginPath();
+                this.ctx.moveTo(eyeX1 - browOffset/2, eyeY1 - browOffset);
+                this.ctx.lineTo(eyeX1 + browOffset/2, eyeY1 - browOffset + size/10);
+                this.ctx.moveTo(eyeX2 - browOffset/2, eyeY2 - browOffset);
+                this.ctx.lineTo(eyeX2 + browOffset/2, eyeY2 - browOffset + size/10);
+                this.ctx.stroke();
+                break;
+
+            case 'smirk':
+                // Sorriso sagaz
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(mouthX - size/4, mouthY);
+                this.ctx.quadraticCurveTo(mouthX, mouthY + size/6, mouthX + size/4, mouthY - size/8);
+                this.ctx.stroke();
+                break;
+
+            case 'zen':
+                // Expressão zen
+                this.ctx.strokeStyle = '#000000';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(mouthX - size/5, mouthY);
+                this.ctx.lineTo(mouthX + size/5, mouthY);
+                this.ctx.stroke();
+                break;
+
+            case 'epic':
+                // Sorriso épico com brilho
+                this.ctx.strokeStyle = `hsl(${this.rainbowHue}, 100%, 50%)`;
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(mouthX, mouthY - size/8, size/4, 0, Math.PI);
+                this.ctx.stroke();
+                
+                // Adicionar pequenos traços de energia
+                const energyLines = 3;
+                for(let i = 0; i < energyLines; i++) {
+                    const angle = (Math.PI / (energyLines + 1)) * (i + 1);
+                    const startX = mouthX + Math.cos(angle) * (size/4);
+                    const startY = mouthY + Math.sin(angle) * (size/4);
+                    const endX = startX + Math.cos(angle) * (size/6);
+                    const endY = startY + Math.sin(angle) * (size/6);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.stroke();
+                }
+                break;
+        }
     }
 
     drawSnakeBody(x, y, size, index, effectColor, effectIntensity = 0) {
